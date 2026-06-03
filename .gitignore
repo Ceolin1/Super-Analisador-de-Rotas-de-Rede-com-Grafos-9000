@@ -1,0 +1,8 @@
+# .gitignore
+*.exe
+*.o
+*.out
+graphroute
+*.png
+*.pdf
+*.dot
