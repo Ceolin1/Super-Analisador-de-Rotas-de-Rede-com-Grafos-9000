@@ -70,6 +70,8 @@ int main(int argc, char* argv[]) {
     }
 
     string filename = argv[1];
+    cout << "Inicializando leitura de rotas a partir de: " << filename << "...\n";
+    
     vector<RotaValida> rotas_filtradas = extrair_rotas(filename);
 
     if (rotas_filtradas.empty()) {
@@ -87,5 +89,43 @@ int main(int argc, char* argv[]) {
     cout << "Vertices unicos (IPs): " << grafo_rede.lista_adj.size() 
          << " | Arestas: " << grafo_rede.num_arestas << "\n";
     
+    int opcao;
+    do {
+        cout << "\n======================================================\n";
+        cout << "1. Exibir Grafo Completo\n";
+        cout << "2. Encontrar Menor Caminho\n";
+        cout << "3. Calcular o Diametro do Grafo\n";
+        cout << "4. Identificar Roteadores Criticos\n";
+        cout << "0. Sair\n";
+        cout << "======================================================\n";
+        cout << "Escolha uma opcao: ";
+        
+        if (!(cin >> opcao)) {
+            cin.clear();
+            cin.ignore(10000, '\n');
+            opcao = -1;
+        }
+
+        switch(opcao) {
+            case 1: 
+                cout << "\nExportar arquivo .dot)\n"; 
+                break;
+            case 2: 
+                cout << "\nAlgoritmo de Menor Caminho)\n"; 
+                break;
+            case 3: 
+                cout << "\nCalculo de Diametro)\n"; 
+                break;
+            case 4: 
+                cout << "\nIdentificar hubs de rede)\n"; 
+                break;
+            case 0: 
+                cout << "\nSaindo da aplicacao...\n"; 
+                break;
+            default: 
+                cout << "\nOpcao invalida! Tente novamente.\n";
+        }
+    } while (opcao != 0);
+
     return 0;
 }
