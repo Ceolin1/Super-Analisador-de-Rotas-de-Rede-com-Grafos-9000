@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
+#include <cstdlib> 
 
 using namespace std;
 
@@ -28,6 +29,60 @@ void adicionar_aresta(Grafo& g, const string& origem, const string& destino) {
     
     if (g.lista_adj.find(destino) == g.lista_adj.end()) {
         g.lista_adj[destino] = vector<string>();
+    }
+}
+
+void exportar_grafo(const Grafo& g, const string& log_filename, int formato) {
+    string dot_filename = log_filename + ".dot";
+    ofstream file(dot_filename);
+    
+    if (!file.is_open()) {
+        cerr << "Erro ao criar arquivo .dot\n";
+        return;
+    }
+    
+    file << "digraph G {\n";
+    for (const auto& par : g.lista_adj) {
+        const string& origem = par.first;
+        for (const string& destino : par.second) {
+            file << "  \"" << origem << "\" -> \"" << destino << "\";\n";
+        }
+    }
+    file << "}\n";
+    file.close();
+
+    string output_file;
+    string command;
+
+    if (formato == 1) { // Tela
+        output_file = log_filename + ".png";
+        command = "dot -Tpng " + dot_filename + " -o " + output_file;
+        system(command.c_str());
+        
+        // Comando condicional de SO para abrir a imagem automaticamente que eu achei na internet
+        #ifdef _WIN32
+            command = "start " + output_file;
+        #elif __APPLE__
+            command = "open " + output_file;
+        #else
+            command = "xdg-open " + output_file;
+        #endif
+        system(command.c_str());
+    } 
+    else if (formato == 2) { // PNG
+        output_file = log_filename + ".png";
+        command = "dot -Tpng " + dot_filename + " -o " + output_file;
+        system(command.c_str());
+        cout << "Arquivo " << output_file << " gerado com sucesso\n";
+    } 
+    else if (formato == 3) { // PDF
+        output_file = log_filename + ".pdf";
+        command = "dot -Tpdf " + dot_filename + " -o " + output_file;
+        system(command.c_str());
+        cout << "Arquivo " << output_file << " gerado com sucesso\n";
+    } 
+    else {
+        cout << "Formato invalido!\n";
     }
 }
 
@@ -70,8 +125,6 @@ int main(int argc, char* argv[]) {
     }
 
     string filename = argv[1];
-    cout << "Inicializando leitura de rotas a partir de: " << filename << "...\n";
-    
     vector<RotaValida> rotas_filtradas = extrair_rotas(filename);
 
     if (rotas_filtradas.empty()) {
@@ -107,23 +160,24 @@ int main(int argc, char* argv[]) {
         }
 
         switch(opcao) {
-            case 1: 
-                cout << "\nExportar arquivo .dot)\n"; 
+            case 1: {
+                cout << "Selecione o formato de saida do Graphviz:\n";
+                cout << "1. Tela\n2. Imagem (PNG)\n3. Documento (PDF)\nOpcao: ";
+                int form;
+                if (cin >> form) {
+                    exportar_grafo(grafo_rede, filename, form);
+                } else {
+                    cin.clear();
+                    cin.ignore(10000, '\n');
+                    cout << "Entrada invalida.\n";
+                }
                 break;
-            case 2: 
-                cout << "\nAlgoritmo de Menor Caminho)\n"; 
-                break;
-            case 3: 
-                cout << "\nCalculo de Diametro)\n"; 
-                break;
-            case 4: 
-                cout << "\nIdentificar hubs de rede)\n"; 
-                break;
-            case 0: 
-                cout << "\nSaindo da aplicacao...\n"; 
-                break;
-            default: 
-                cout << "\nOpcao invalida! Tente novamente.\n";
+            }
+            case 2: cout << "\n(Algoritmo de Menor Caminho)\n"; break;
+            case 3: cout << "\n(Calculo de Diametro)\n"; break;
+            case 4: cout << "\n(Identificar hubs de rede)\n"; break;
+            case 0: cout << "\nSaindo da aplicacao...\n"; break;
+            default: cout << "\nOpcao invalida! Tente novamente.\n";
         }
     } while (opcao != 0);
 
