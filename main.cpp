@@ -5,7 +5,8 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
-#include <cstdlib> 
+#include <cstdlib>
+#include <queue>
 
 using namespace std;
 
@@ -32,7 +33,42 @@ void adicionar_aresta(Grafo& g, const string& origem, const string& destino) {
     }
 }
 
-void exportar_grafo(const Grafo& g, const string& log_filename, int formato) {
+vector<string> encontrar_menor_caminho(const Grafo& g, const string& origem, const string& destino) {
+    if (g.lista_adj.find(origem) == g.lista_adj.end() || g.lista_adj.find(destino) == g.lista_adj.end()) {
+        return {};
+    }
+
+    queue<vector<string>> q;
+    unordered_map<string, bool> visitado;
+
+    q.push({origem});
+    visitado[origem] = true;
+
+    while (!q.empty()) {
+        vector<string> caminho = q.front();
+        q.pop();
+
+        string vertice_atual = caminho.back();
+
+        if (vertice_atual == destino) {
+            return caminho;
+        }
+
+        if (g.lista_adj.find(vertice_atual) != g.lista_adj.end()) {
+            for (const string& vizinho : g.lista_adj.at(vertice_atual)) {
+                if (!visitado[vizinho]) {
+                    visitado[vizinho] = true;
+                    vector<string> novo_caminho = caminho;
+                    novo_caminho.push_back(vizinho);
+                    q.push(novo_caminho);
+                }
+            }
+        }
+    }
+    return {};
+}
+
+void exportar_grafo(const Grafo& g, const string& log_filename, int formato, const vector<string>& caminho = {}) {
     string dot_filename = log_filename + ".dot";
     ofstream file(dot_filename);
     
@@ -42,10 +78,27 @@ void exportar_grafo(const Grafo& g, const string& log_filename, int formato) {
     }
     
     file << "digraph G {\n";
+    
+    for (const string& ip : caminho) {
+        file << "  \"" << ip << "\" [style=filled, fillcolor=lightblue, color=blue, penwidth=2.0];\n";
+    }
+
     for (const auto& par : g.lista_adj) {
         const string& origem = par.first;
         for (const string& destino : par.second) {
-            file << "  \"" << origem << "\" -> \"" << destino << "\";\n";
+            bool in_path = false;
+            for (size_t i = 0; i + 1 < caminho.size(); ++i) {
+                if (caminho[i] == origem && caminho[i+1] == destino) {
+                    in_path = true;
+                    break;
+                }
+            }
+
+            if (in_path) {
+                file << "  \"" << origem << "\" -> \"" << destino << "\" [color=red, penwidth=2.0];\n";
+            } else {
+                file << "  \"" << origem << "\" -> \"" << destino << "\";\n";
+            }
         }
     }
     file << "}\n";
@@ -54,12 +107,12 @@ void exportar_grafo(const Grafo& g, const string& log_filename, int formato) {
     string output_file;
     string command;
 
-    if (formato == 1) { // Tela
+    if (formato == 1) {
         output_file = log_filename + ".png";
         command = "dot -Tpng " + dot_filename + " -o " + output_file;
         system(command.c_str());
         
-        // Comando condicional de SO para abrir a imagem automaticamente que eu achei na internet
+        // Comando condicional de SO para abrir a imagem automaticamente
         #ifdef _WIN32
             command = "start " + output_file;
         #elif __APPLE__
@@ -69,13 +122,13 @@ void exportar_grafo(const Grafo& g, const string& log_filename, int formato) {
         #endif
         system(command.c_str());
     } 
-    else if (formato == 2) { // PNG
+    else if (formato == 2) {
         output_file = log_filename + ".png";
         command = "dot -Tpng " + dot_filename + " -o " + output_file;
         system(command.c_str());
         cout << "Arquivo " << output_file << " gerado com sucesso\n";
     } 
-    else if (formato == 3) { // PDF
+    else if (formato == 3) {
         output_file = log_filename + ".pdf";
         command = "dot -Tpdf " + dot_filename + " -o " + output_file;
         system(command.c_str());
@@ -173,9 +226,39 @@ int main(int argc, char* argv[]) {
                 }
                 break;
             }
-            case 2: cout << "\n(Algoritmo de Menor Caminho)\n"; break;
-            case 3: cout << "\n(Calculo de Diametro)\n"; break;
-            case 4: cout << "\n(Identificar hubs de rede)\n"; break;
+            case 2: {
+                string ip_origem, ip_destino;
+                cout << "Digite o IP de Origem: ";
+                cin >> ip_origem;
+                cout << "Digite o IP de Destino: ";
+                cin >> ip_destino;
+
+                vector<string> caminho = encontrar_menor_caminho(grafo_rede, ip_origem, ip_destino);
+
+                if (caminho.empty()) {
+                    cout << "Alerta: Nao ha conectividade entre " << ip_origem << " e " << ip_destino << ".\n";
+                } else {
+                    int saltos = caminho.size() - 1;
+                    cout << "Caminho encontrado (" << saltos << " saltos):\n";
+                    for (size_t i = 0; i < caminho.size(); ++i) {
+                        cout << caminho[i];
+                        if (i < caminho.size() - 1) cout << " -> ";
+                    }
+                    cout << "\n\nSelecione o formato de saida do Graphviz:\n";
+                    cout << "1. Tela\n2. Imagem (PNG)\n3. Documento (PDF)\nOpcao: ";
+                    int form;
+                    if (cin >> form) {
+                        exportar_grafo(grafo_rede, filename, form, caminho);
+                    } else {
+                        cin.clear();
+                        cin.ignore(10000, '\n');
+                        cout << "Entrada invalida.\n";
+                    }
+                }
+                break;
+            }
+            case 3: cout << "\n(Em construcao: Calculo de Diametro)\n"; break;
+            case 4: cout << "\n(Em construcao: Identificar hubs de rede)\n"; break;
             case 0: cout << "\nSaindo da aplicacao...\n"; break;
             default: cout << "\nOpcao invalida! Tente novamente.\n";
         }
