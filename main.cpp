@@ -68,6 +68,39 @@ vector<string> encontrar_menor_caminho(const Grafo& g, const string& origem, con
     return {};
 }
 
+int calcular_diametro(const Grafo& g) {
+    int max_diametro = 0;
+
+    for (const auto& par : g.lista_adj) {
+        const string& origem = par.first;
+        queue<pair<string, int>> q;
+        unordered_map<string, bool> visitado;
+
+        q.push({origem, 0});
+        visitado[origem] = true;
+
+        while (!q.empty()) {
+            string vertice_atual = q.front().first;
+            int dist = q.front().second;
+            q.pop();
+
+            if (dist > max_diametro) {
+                max_diametro = dist;
+            }
+
+            if (g.lista_adj.find(vertice_atual) != g.lista_adj.end()) {
+                for (const string& vizinho : g.lista_adj.at(vertice_atual)) {
+                    if (!visitado[vizinho]) {
+                        visitado[vizinho] = true;
+                        q.push({vizinho, dist + 1});
+                    }
+                }
+            }
+        }
+    }
+    return max_diametro;
+}
+
 void exportar_grafo(const Grafo& g, const string& log_filename, int formato, const vector<string>& caminho = {}) {
     string dot_filename = log_filename + ".dot";
     ofstream file(dot_filename);
@@ -257,7 +290,12 @@ int main(int argc, char* argv[]) {
                 }
                 break;
             }
-            case 3: cout << "\n(Em construcao: Calculo de Diametro)\n"; break;
+            case 3: {
+                cout << "\nCalculando diametro da topologia...\n";
+                int diametro = calcular_diametro(grafo_rede);
+                cout << "O diametro do grafo e: " << diametro << " saltos.\n";
+                break;
+            }
             case 4: cout << "\n(Em construcao: Identificar hubs de rede)\n"; break;
             case 0: cout << "\nSaindo da aplicacao...\n"; break;
             default: cout << "\nOpcao invalida! Tente novamente.\n";
