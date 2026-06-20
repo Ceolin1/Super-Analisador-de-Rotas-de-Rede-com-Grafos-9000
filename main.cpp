@@ -101,6 +101,31 @@ int calcular_diametro(const Grafo& g) {
     return max_diametro;
 }
 
+void identificar_roteadores_criticos(const Grafo& g) {
+    unordered_map<string, int> in_degree;
+    
+    for (const auto& par : g.lista_adj) {
+        if (in_degree.find(par.first) == in_degree.end()) {
+            in_degree[par.first] = 0;
+        }
+        for (const string& destino : par.second) {
+            in_degree[destino]++;
+        }
+    }
+
+    vector<pair<string, int>> ranking(in_degree.begin(), in_degree.end());
+    
+    sort(ranking.begin(), ranking.end(), [](const pair<string, int>& a, const pair<string, int>& b) {
+        return a.second > b.second;
+    });
+
+    cout << "\nTop 5 Roteadores Criticos (Maior Grau de Entrada):\n";
+    int limite = min(5, (int)ranking.size());
+    for (int i = 0; i < limite; ++i) {
+        cout << i + 1 << ". " << ranking[i].first << " - " << ranking[i].second << " conexoes de entrada\n";
+    }
+}
+
 void exportar_grafo(const Grafo& g, const string& log_filename, int formato, const vector<string>& caminho = {}) {
     string dot_filename = log_filename + ".dot";
     ofstream file(dot_filename);
@@ -144,7 +169,7 @@ void exportar_grafo(const Grafo& g, const string& log_filename, int formato, con
         output_file = log_filename + ".png";
         command = "dot -Tpng " + dot_filename + " -o " + output_file;
         system(command.c_str());
-        
+
         // Comando condicional de SO para abrir a imagem automaticamente
         #ifdef _WIN32
             command = "start " + output_file;
@@ -296,7 +321,10 @@ int main(int argc, char* argv[]) {
                 cout << "O diametro do grafo e: " << diametro << " saltos.\n";
                 break;
             }
-            case 4: cout << "\n(Em construcao: Identificar hubs de rede)\n"; break;
+            case 4: {
+                identificar_roteadores_criticos(grafo_rede);
+                break;
+            }
             case 0: cout << "\nSaindo da aplicacao...\n"; break;
             default: cout << "\nOpcao invalida! Tente novamente.\n";
         }
